@@ -13,7 +13,7 @@ import pathlib
 sys.path.append(str(pathlib.Path(__file__).parent.parent))
 
 from ClosedLoopRRTStar import pure_pursuit
-from ClosedLoopRRTStar import unicycle_model
+#from ClosedLoopRRTStar import unicycle_model
 from ReedsSheppPath import reeds_shepp_path_planning
 from RRTStarReedsShepp.rrt_star_reeds_shepp import RRTStarReedsShepp
 
@@ -112,7 +112,7 @@ class ClosedLoopRRTStar(RRTStarReedsShepp):
             print("final angle is bad")
             find_goal = False
 
-        travel = unicycle_model.dt * sum(np.abs(v))
+        travel = .5 * sum(np.abs(v))
         origin_travel = sum(np.hypot(np.diff(cx), np.diff(cy)))
 
         if (travel / origin_travel) >= self.invalid_travel_ratio:
