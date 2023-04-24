@@ -40,7 +40,6 @@ class RRT:
             self.ymin = float(area[2])
             self.ymax = float(area[3])
 
-
     def __init__(self, #self is the name of the robot
                  start, #start is origin (or chosen location)
                  goal, #goal is point needing to be reached
@@ -130,8 +129,8 @@ class RRT:
         n_expand = math.floor(extend_length / self.path_resolution)
 
         for _ in range(n_expand):
-            new_node.x += self.path_resolution * math.cos(theta)
-            new_node.y += self.path_resolution * math.sin(theta)
+            new_node.x += self.path_resolution*math.cos(theta)
+            new_node.y += self.path_resolution*math.sin(theta)
             new_node.path_x.append(new_node.x)
             new_node.path_y.append(new_node.y)
 

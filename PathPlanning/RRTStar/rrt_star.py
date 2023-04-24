@@ -66,12 +66,40 @@ class MultiAgentSim:
             primary_bot_index=primary_bot_index+1
         if conflict_list:
             print("Conflict(s) found. Paths must be replanned.")
-            self.conflict_index_list = conflict_list
         else: 
             print("No conflicts found. All paths have been finalized")
+        self.conflict_index_list = conflict_list
         return conflict_list
-    #def MovingObstacleGeneration(RRT_list)
-                 
+
+    def conflict_resolution(self):
+        moving_ob_list = []
+        New_RRT_List = [] #store index of RRT and the new RRT
+
+        for bot in self.RRT_list: 
+            moving_ob = self.MovingObstacle(bot.robot_radius+.1,bot.d_path) #add a .1m safety region
+            moving_ob_list.append(moving_ob)
+        for i in self.conflict_index_list: #create new RRT with moving obstacles for each conflicted path
+            spec_moving_obstacle_list = moving_ob_list[:i] + moving_ob_list[i+1:]
+            print(spec_moving_obstacle_list)
+            old_rrt = self.RRT_list[i]
+            rrt_star = RRTStar(
+            start = old_rrt.start_coords,
+            goal = old_rrt.goal_coords,
+            rand_area=old_rrt.rand_area,
+            obstacle_list=old_rrt.obstacle_list,
+            expand_dis=old_rrt.expand_dis,
+            robot_radius=old_rrt.robot_radius,
+            search_until_max_iter=True,
+            moving_obstacle_list=spec_moving_obstacle_list) #include speed
+            (path, d_path) = rrt_star.path_creation()
+            delta_cost = path[-1][2]-self.RRT_list[i].path[-1][2] #TODO: change when z is added, I want to index time
+            New_RRT_List.append((i, rrt_star, self.RRT_list[i], delta_cost)) #tuple is (index, new, old, cost)
+        lowest_cost_tuple = New_RRT_List[0]
+        for tup in New_RRT_List:
+            if tup[-1] < lowest_cost_tuple[-1]:
+                lowest_cost_tuple = tup
+        self.RRT_list[lowest_cost_tuple[0]] = lowest_cost_tuple[1] #replaces RRT star with lowest difference in costs
+                
 class RRTStar(RRT):
     """
     Class for RRT Star planning
@@ -87,7 +115,7 @@ class RRTStar(RRT):
                  goal,
                  obstacle_list,
                  rand_area,
-                 expand_dis=1,
+                 expand_dis=.1,
                  path_resolution=.1,
                  goal_sample_rate=20,
                  max_iter=1500,
@@ -109,6 +137,9 @@ class RRTStar(RRT):
                          path_resolution, goal_sample_rate, max_iter,
                          robot_radius=robot_radius)
         self.connect_circle_dist = connect_circle_dist
+        self.goal_coords = goal
+        self.rand_area = rand_area
+        self.start_coords = start
         self.goal_node = self.Node(goal[0], goal[1])
         self.search_until_max_iter = search_until_max_iter
         self.node_list = [] 
@@ -126,7 +157,7 @@ class RRTStar(RRT):
 
         self.node_list = [self.start]
         for i in range(self.max_iter):
-            print("Iter:", i, ", number of nodes:", len(self.node_list))
+            #print("Iter:", i, ", number of nodes:", len(self.node_list))
             rnd = self.get_random_node()
             nearest_ind = self.get_nearest_node_index(self.node_list, rnd)
             new_node = self.steer(self.node_list[nearest_ind], rnd,
@@ -167,12 +198,22 @@ class RRTStar(RRT):
 
         return None
     
+    def path_creation(self, timestep=.1):
+        path = self.planning(animation=False)
+        if path is None:
+            print("Cannot find path")
+            exit() #if a path cannot be found, notify the user and end the program
+        else:
+            print("found path!!")
+            for spot in path:
+                print(spot)
+            d_path =self.discretize_path(path, timestep)
+            self.d_path = d_path
+            return (path, d_path)
+
     def generate_final_course(self, goal_ind): #calculates final path once goal is reached
         path = [[self.end.x, self.end.y]]
         node = self.node_list[goal_ind]
-
-
-
     
         while node.parent is not None: #go backwards from goal and find point that spawned it
             path.append([node.x, node.y])
@@ -317,7 +358,7 @@ class RRTStar(RRT):
                 edge_node, self.obstacle_list, self.robot_radius)
             improved_cost = near_node.cost > edge_node.cost
 
-            if no_collision and improved_cost:
+            if no_collision and improved_cost: #add and rewire_on = True
                 near_node.x = edge_node.x
                 near_node.y = edge_node.y
                 near_node.cost = edge_node.cost
@@ -353,8 +394,7 @@ class RRTStar(RRT):
         self.d_path = d_path
         return d_path
     
-    @staticmethod
-    def check_collision(node, obstacleList, robot_radius, movingObstacleList =[]): #whole method must change when z is added
+    def check_collision(self, node, obstacleList, robot_radius): #whole method must change when z is added
 
         if node is None:
             return False
@@ -366,16 +406,32 @@ class RRTStar(RRT):
 
             if min(d_list) <= (size+robot_radius)**2: #if minimum distance is within robot, collision occured
                 return False  # collision
+        movingObstacleList = self.moving_obstacle_list
         if  movingObstacleList:
-            tstep = movingObstacleList[0].tstep
-            path_index = node.cost//tstep
-            for ob in movingObstacleList:
-                path = ob.dpath
-                if len(path)>path_index+1: #only check if the time occurs within path
-                    dx_list = [ox - x for x in node.path_x]
-                    dy_list = [oy - y for y in node.path_y]
-                    d_list = [dx * dx + dy * dy for (dx, dy) in zip(dx_list, dy_list)]
-
+            if node.parent is None:
+                for ob in movingObstacleList:
+                    d = math.hypot(node.x - ob.d_path[0][0], node.y - ob.d_path[0][1])
+                    if d <= ob.radius + robot_radius:
+                        return False
+            else:
+                old_node = node.parent
+                time = old_node.cost #start time of node path
+                speed = math.hypot(node.x-old_node.x,node.y-old_node.y)/(node.cost-old_node.cost)
+                node_path_index = 1 #setting index to iterate through discretized node path. Start at 1
+                while node_path_index<len(node.path_x):
+                    (x,y) = (node.path_x[node_path_index],node.path_y[node_path_index])
+                    (x0,y0) = (node.path_x[node_path_index-1],node.path_y[node_path_index-1])
+                    dist_btwn_path_points =math.hypot(x-x0,y-y0)
+                    time = time+dist_btwn_path_points/speed
+                    for ob in movingObstacleList:
+                        if len(ob.d_path)>1: #check if the path exists before calculating speed
+                            ob_path_tstep = ob.d_path[1][2] - ob.d_path[0][2] #will change when z is added - uses index for time
+                            ob_path_index = int(time//ob_path_tstep)
+                        else:
+                            ob_path_index = 0 #TODO: prevent index out of range below
+                        d = math.hypot(x-ob.d_path[ob_path_index][0],y-ob.d_path[ob_path_index][1]) #change when z is added - computes distance
+                        if d <= ob.radius + robot_radius: #if distance between point on node path and point on obstacle path is too small, collides
+                            return False
         return True  # safe
 
 def calc_dist(point1,point2):
@@ -383,9 +439,9 @@ def calc_dist(point1,point2):
     return dist
 def main():
     print("Start " + __file__)
-
-    # ====Search Path with RRT====
-    obstacle_list = [
+    print()
+    # ====Search Path with RRT*====
+    ''' obstacle_list = [
         (5, 5, 1),
         (3, 6, 2),
         (3, 8, 2),
@@ -393,8 +449,9 @@ def main():
         (7, 5, 2),
         (9, 5, 2),
         (8, 10, 1),
-        (6, 12, 1),
-    ]  # [x,y,size(radius)]
+        (6, 12, 1)]'''
+    obstacle_list = [(5,5,1),(10,5,3)]
+      # [x,y,size(radius)]
 
     # Set Initial parameters
     rrt_star1 = RRTStar(
@@ -402,54 +459,56 @@ def main():
         goal=[0, 0],
         rand_area=[-2, 15],
         obstacle_list=obstacle_list,
-        expand_dis=2,
+        expand_dis=5,
         robot_radius=.1) #include speed
-    path1 = rrt_star1.planning(animation=False)
+    (path1, d_path1) = rrt_star1.path_creation()
 
     rrt_star2 = RRTStar(
-        start=[1, -1],
-        goal=[5, 3],
+        start=[0, 0],
+        goal=[10, 1],
         rand_area=[-2, 15],
         obstacle_list=obstacle_list,
-        expand_dis=2,
+        expand_dis=5,
         robot_radius=.1) #include speed
-    path2 = rrt_star2.planning(animation=False)
+    (path2, d_path2) = rrt_star2.path_creation()
 
-    if path1 is None:
-        print("Cannot find path")
-    else:
-        print("found path!!")
-        for spot in path1:
-            print(spot)
-        d_path1 =rrt_star1.discretize_path(path1, .1)
 
-    if path2 is None:
-        print("Cannot find path")
-    else:
-        print("found path!!")
-        for spot in path2:
-            print(spot)
-        d_path2 =rrt_star2.discretize_path(path2, .1)
+    rrt_star3 = RRTStar(
+        start=[0, 2],
+        goal=[10,1],
+        rand_area=[-2, 15],
+        obstacle_list=obstacle_list,
+        expand_dis=5,
+        robot_radius=.1) #include speed
+    (path3, d_path3) = rrt_star3.path_creation()
 
         # Draw final path
+
+
+    RRTlist = [rrt_star1,rrt_star2,rrt_star3]
+    MARRT = MultiAgentSim(RRTlist)
+    MARRT.check_paths()
+    print("Robots in conflict: ",MARRT.conflict_index_list)
+    res_attempts = 0 #initialize number of resolution loops
+    while res_attempts < len(RRTlist) and MARRT.conflict_index_list: #run if conflict and feasible solution
+        MARRT.conflict_resolution()
+        MARRT.check_paths()
+        res_attempts = res_attempts+1
+
     if show_animation:
         rrt_star1.draw_graph()
-        plt.plot([x for (x, y, t) in path1], [y for (x, y, t) in path1], 'r*')
+        plt.plot([x for (x, y, t) in path1], [y for (x, y, t) in path1], 'r*') #TODO: change when z is added
         plt.plot([x for (x, y, t) in d_path1], [y for (x, y, t) in d_path1], 'y*')
 
     if show_animation:
         plt.plot([x for (x, y, t) in path2], [y for (x, y, t) in path2], 'r*')
         plt.plot([x for (x, y, t) in d_path2], [y for (x, y, t) in d_path2], 'y*')
+
+    if show_animation:
+        plt.plot([x for (x, y, t) in path3], [y for (x, y, t) in path3], 'r*')
+        plt.plot([x for (x, y, t) in d_path3], [y for (x, y, t) in d_path3], 'y*')
         plt.grid(True)
-
-    RRTlist = [rrt_star1,rrt_star2]
-    MARRT = MultiAgentSim(RRTlist)
-    print("test")
-    MARRT.print_test()
-    MARRT.check_paths()
-    print("Robots in conflict: ",MARRT.conflict_index_list)
     plt.show()
-
 
 if __name__ == '__main__':
     main()
