@@ -75,7 +75,7 @@ class RRTStar(RRT):
                 node_with_updated_parent = self.choose_parent(
                     new_node, near_inds)
                 if node_with_updated_parent:
-                    self.rewire(node_with_updated_parent, near_inds)
+                    #self.rewire(node_with_updated_parent, near_inds)
                     self.node_list.append(node_with_updated_parent)
                 else:
                     self.node_list.append(new_node)
@@ -257,8 +257,8 @@ def main():
         goal=[6, 10],
         rand_area=[-2, 15],
         obstacle_list=obstacle_list,
-        expand_dis=5,
-        robot_radius=0.8)
+        expand_dis=2,
+        robot_radius=0.1)
     path = rrt_star.planning(animation=show_animation)
 
     if path is None:

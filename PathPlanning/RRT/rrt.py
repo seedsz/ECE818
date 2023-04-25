@@ -46,7 +46,7 @@ class RRT:
                  obstacle_list, #list of obstacles (areas that can't be crossed)
                  rand_area, #unsure?
                  expand_dis=1, #the distance of each step
-                 path_resolution=10, #unsure
+                 path_resolution=.1, #unsure
                  goal_sample_rate=5, #unsure
                  max_iter=500, #point at which the program will give up?
                  play_area=None, #smaller area for robot. Unlikely to be used.
@@ -176,12 +176,12 @@ class RRT:
             'key_release_event',
             lambda event: [exit(0) if event.key == 'escape' else None])
         if rnd is not None:
-            plt.plot(rnd.x, rnd.y, "^k")
+            #plt.plot(rnd.x, rnd.y, "^k")
             if self.robot_radius > 0.0:
                 self.plot_circle(rnd.x, rnd.y, self.robot_radius, '-r') #plot circle around robot
-        for node in self.node_list:
-            if node.parent: #plot the final path by going backwards from the goal to each parent
-                plt.plot(node.path_x, node.path_y, "-g")
+        #for node in self.node_list:
+            #if node.parent: #plot the final path by going backwards from the goal to each parent
+                #plt.plot(node.path_x, node.path_y, "-g")
 
         for (ox, oy, size) in self.obstacle_list: #plot all obstacles
             self.plot_circle(ox, oy, size)
@@ -270,7 +270,7 @@ def main(gx=6.0, gy=10.0):
         # play_area=[0, 10, 0, 14]
         robot_radius=0.8
         )
-    path = rrt.planning(animation=False)
+    path = rrt.planning(animation=True)
 
     if path is None:
         print("Cannot find path")
