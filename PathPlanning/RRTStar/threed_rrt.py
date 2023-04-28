@@ -1,9 +1,6 @@
 """
-
 Path planning Sample Code with Randomized Rapidly-Exploring Random Trees (RRT)
-
 author: AtsushiSakai(@Atsushi_twi)
-
 """
 
 import math
@@ -62,14 +59,12 @@ class RRT:
                  ):
         """
         Setting Parameter
-
         start:Start Position [x,y]
         goal:Goal Position [x,y]
         obstacleList:obstacle Positions [[x,y,size],...]
         randArea:Random Sampling Area [min,max]
         play_area:stay inside this area [xmin,xmax,ymin,ymax]
         robot_radius: robot body modeled as circle with given radius
-
         """
         self.start = self.Node(start[0], start[1], start[2]) #added the [2]
         self.end = self.Node(goal[0], goal[1], goal[2])
@@ -108,7 +103,6 @@ class RRT:
     def planning(self, animation=True):
         """
         rrt path planning
-
         animation: flag for animation on or off
         """
 
