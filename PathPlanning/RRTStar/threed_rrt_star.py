@@ -16,6 +16,8 @@ from RRT.threed_rrt import RRT
 
 show_animation = True
 
+
+
 class MultiAgentSim:
     '''
     Class for simulating the multi-agent algorithm
@@ -30,14 +32,23 @@ class MultiAgentSim:
     def __init__(self, #multi-agent simulation
                  RRT_list=None, #list of all cooperating RRTs/robots
                  safety_buffer = .1):
-        self.RRT_list = RRT_list
+        self.RRT_list = RRT_list        #TODO referenced rrt
         self.conflict_index_list = [] #list of indexes of all paths/robots in conflict
         self.safety_buffer = safety_buffer
 
     def print_test(self):
         for bot in self.RRT_list:
             print(bot.speed)
-
+            
+    def set_ax(self):           #Added this for graphing so that there is only one instance of graph
+        fig = plt.figure()
+        self.ax = fig.add_subplot(projection='3d')
+        self.ax.set_aspect('equal')  
+        self.ax.set_xlim3d(self.min_rand, self.max_rand)
+        self.ax.set_ylim3d(self.min_rand, self.max_rand) 
+        self.ax.set_zlim3d(self.min_rand, self.max_rand)
+        self.ax.grid(True)
+        
     def check_paths(self):
         '''
         Check the planned paths of each robot to identify collisions.
@@ -49,7 +60,7 @@ class MultiAgentSim:
         while primary_bot_index<len(self.RRT_list):
             secondary_bot_index = 0
             if primary_bot_index not in conflict_list:
-                while secondary_bot_index<len(self.RRT_list):
+                while secondary_bot_index<len(self.RRT_list):   #TODO rrt referenced
                     if secondary_bot_index != primary_bot_index:
                         path_index = 0
                         dpath1 = self.RRT_list[primary_bot_index].d_path
@@ -80,7 +91,7 @@ class MultiAgentSim:
             moving_ob_list.append(moving_ob)
         for i in self.conflict_index_list: #create new RRT with moving obstacles for each conflicted path
             spec_moving_obstacle_list = moving_ob_list[:i] + moving_ob_list[i+1:] #do not compare a path with itself
-            old_rrt = self.RRT_list[i]
+            old_rrt = self.RRT_list[i]  #TODO rrt referenced
             rrt_star = RRTStar(
             start = old_rrt.start_coords,
             goal = old_rrt.goal_coords,
@@ -100,12 +111,12 @@ class MultiAgentSim:
                 lowest_cost_tuple = tup
         self.RRT_list[lowest_cost_tuple[0]] = lowest_cost_tuple[1] #replaces RRT star with lowest difference in costs
         print("Robot ", lowest_cost_tuple[0], "'s path has been modified to avoid conflict. ", "The new path is ", round(lowest_cost_tuple[3],2), " seconds slower.")
-class RRTStar(RRT):
+class RRTStar(RRT):     #TODO instance of rrt
     """
     Class for RRT Star planning
     """
 
-    class Node(RRT.Node):
+    class Node(RRT.Node):   #TODO instance of rrt
         def __init__(self, x, y, z, t = None): #DONE: added z
             super().__init__(x, y, z) 
             self.cost = 0.0 #cost = time in this sim
@@ -117,8 +128,8 @@ class RRTStar(RRT):
                  rand_area,
                  expand_dis=.1,
                  path_resolution=.1,
-                 goal_sample_rate=90,
-                 max_iter=4000,
+                 goal_sample_rate=95,
+                 max_iter=1000,
                  connect_circle_dist=50.0,
                  search_until_max_iter=True,
                  robot_radius=0.0,
@@ -160,7 +171,7 @@ class RRTStar(RRT):
         self.node_list = [self.start]
         for i in range(self.max_iter):
             #print("Iter:", i, ", number of nodes:", len(self.node_list))
-            rnd = self.get_random_node() #TODO: use get_random from 3DRRT
+            rnd = self.get_random_node() # use get_random from 3DRRT
             nearest_ind = self.get_nearest_node_index(self.node_list, rnd)
             new_node = self.steer(self.node_list[nearest_ind], rnd, #DONE: get steer from 3DRRT
                                   self.expand_dis)
@@ -203,7 +214,7 @@ class RRTStar(RRT):
         return None
     
     def path_creation(self, timestep=.1):
-        path = self.planning(animation=False)
+        path = self.planning(animation=False)   #TODO 
         if path is None:
             print("Cannot find path")
             exit() #if a path cannot be found, notify the user and end the program
@@ -295,7 +306,7 @@ class RRTStar(RRT):
 
         safe_goal_inds = []
         for goal_ind in goal_inds:
-            t_node = self.steer(self.node_list[goal_ind], self.goal_node) #TODO: get steer from 3DRRT
+            t_node = self.steer(self.node_list[goal_ind], self.goal_node) #: get steer from 3DRRT
             t_node.cost = self.calc_new_cost(t_node.parent, t_node) 
             if self.check_collision(
                     t_node, self.obstacle_list, self.robot_radius):
@@ -453,6 +464,15 @@ class RRTStar(RRT):
 def main():
     print("Start " + __file__)
     print()
+
+    #fig = plt.figure()
+    #ax = fig.add_subplot(projection='3d')
+    #ax.set_aspect('equal')  
+    #ax.set_xlim3d(-2, 15)
+    #ax.set_ylim3d(-2, 15) 
+    #ax.set_zlim3d(-2, 15)
+    #ax.grid(True)
+    
     # ====Search Path with RRT*====
     ''' obstacle_list = [
         (5, 5, 1),
@@ -463,12 +483,12 @@ def main():
         (9, 5, 2),
         (8, 10, 1),
         (6, 12, 1)]'''
-    obstacle_list = [(-2,-2,-2,1)] #DONE: add z
+    obstacle_list = [(-2,-2,-2,1), (5,5,5,1), (11,7,9,1), (1,12,12, 2)] #DONE: add z
       # [x,y,z,size(radius)]
 
     # Set Initial parameters
     #Robot 0
-    rrt_star1 = RRTStar( #DONE: add z to all coordinates (not rand_area)
+    rrt_star1 = RRTStar( #DONE: add z to all coordinates (not rand_area)    #TODO
         start=[-1, 1, 1],
         goal=[6.5, 6.5, 6.5],
         rand_area=[-2, 15],
@@ -477,7 +497,7 @@ def main():
         robot_radius=.3) #include speed
     (path1, d_path1) = rrt_star1.path_creation()
     #Robot1
-    rrt_star2 = RRTStar( #DONE: add z to all coordinates (not rand_area)
+    rrt_star2 = RRTStar( #DONE: add z to all coordinates (not rand_area) #TODO These are the three instances of the figure
         start=[12, 8, 10],
         goal=[2, -1, 0],
         rand_area=[-2, 15],
@@ -498,7 +518,7 @@ def main():
         # Draw final path
 
 
-    RRTlist = [rrt_star2,rrt_star3]
+    RRTlist = [rrt_star1, rrt_star2, rrt_star3]
     MARRT = MultiAgentSim(RRTlist)
     MARRT.check_paths()
     print("Robots in conflict: ",MARRT.conflict_index_list)
@@ -507,21 +527,47 @@ def main():
         MARRT.conflict_resolution()
         MARRT.check_paths()
         res_attempts = res_attempts+1
-    '''if show_animation: 
+        
+    ax = rrt_star1.draw_graph()
+    ax.set_title('3D RRT Star Without Collision Correction')
+    ax.plot3D([x for (x, y, z, t) in rrt_star1.path], [y for (x, y, z, t) in rrt_star1.path], [z for (x, y, z, t) in rrt_star1.path], '-r')  #This is the old path
 
-        plt.plot([x for [x, y, z, t] in MARRT.RRT_list[0].path], [y for [x, y, z, t] in MARRT.RRT_list[0].path], [z for [x, y, z, t] in MARRT.RRT_list[0].path],'r*') #TODO: change when z is added
-        plt.plot([x for [x, y, z, t] in MARRT.RRT_list[0].d_path], [y for [x, y, z, t] in MARRT.RRT_list[0].d_path], [z for [x, y, z, t] in MARRT.RRT_list[0].d_path], 'b')
-        plt.show()'''
-'''
-    if show_animation:
-        plt.plot([x for [x, y, t] in MARRT.RRT_list[1].path], [y for [x, y, t] in MARRT.RRT_list[1].path], 'r*') #TODO: change when z is added
-        plt.plot([x for [x, y, t] in MARRT.RRT_list[1].d_path], [y for [x, y, t] in MARRT.RRT_list[1].d_path], 'g')
 
-    if show_animation:
-        plt.plot([x for [x, y, t] in MARRT.RRT_list[2].path], [y for [x, y, t] in MARRT.RRT_list[2].path], 'r*') #TODO: change when z is added
-        plt.plot([x for [x, y, t] in MARRT.RRT_list[2].d_path], [y for [x, y, t] in MARRT.RRT_list[2].d_path], 'y')
-        plt.grid(True)
-'''
+    ax.plot3D([x for (x, y, z, t) in rrt_star2.path], [y for (x, y, z, t) in rrt_star2.path], [z for (x, y, z, t) in rrt_star2.path], '-b')  #need z I think this worked with out the 3D on plot
+    ax.plot3D(rrt_star2.start.x, rrt_star2.start.y, rrt_star2.start.z, "xb")  #Start node of rrt2
+    ax.plot3D(rrt_star2.end.x, rrt_star2.end.y, rrt_star2.end.z, "xg")      #End node of rrt3
+
+    ax.plot3D([x for (x, y, z, t) in rrt_star3.path], [y for (x, y, z, t) in rrt_star3.path], [z for (x, y, z, t) in rrt_star3.path], '-y')  #need z I think this worked with out the 3D on plot'''
+    ax.plot3D(rrt_star3.start.x, rrt_star3.start.y, rrt_star3.start.z, "xb")  #Start node of rrt2
+    ax.plot3D(rrt_star3.end.x, rrt_star3.end.y, rrt_star3.end.z, "xg")      #End node of rrt3
+    
+    plt.pause(0.01)  # Need for Mac
+    plt.show()
+    
+    ax = rrt_star1.draw_graph()
+    ax.set_title('3D RRT Star With Collision Correction')
+
+
+    ax.plot3D([x for [x, y, z, t] in MARRT.RRT_list[0].path], [y for [x, y, z, t] in MARRT.RRT_list[0].path], [z for [x, y, z, t] in MARRT.RRT_list[0].path],'r*') #TODO: change when z is added
+    ax.plot3D([x for [x, y, z, t] in MARRT.RRT_list[0].d_path], [y for [x, y, z, t] in MARRT.RRT_list[0].d_path], [z for [x, y, z, t] in MARRT.RRT_list[0].d_path], 'r')
+    ax.plot3D(MARRT.RRT_list[0].start.x, MARRT.RRT_list[0].start.y, MARRT.RRT_list[0].start.z, "xb")  #Start node of rrt2
+    ax.plot3D(MARRT.RRT_list[0].end.x, MARRT.RRT_list[0].end.y, MARRT.RRT_list[0].end.z, "xg")      #End node of rrt3
+
+
+    ax.plot3D([x for [x, y, z, t] in MARRT.RRT_list[1].path], [y for [x, y, z, t] in MARRT.RRT_list[1].path], [z for [x, y, z, t] in MARRT.RRT_list[1].path], 'r*') #TODO: change when z is added
+    ax.plot3D([x for [x, y, z, t] in MARRT.RRT_list[1].d_path], [y for [x, y, z, t] in MARRT.RRT_list[1].d_path], [z for [x, y, z, t] in MARRT.RRT_list[1].d_path], 'b')
+    ax.plot3D(MARRT.RRT_list[1].start.x, MARRT.RRT_list[1].start.y, MARRT.RRT_list[1].start.z, "xb")  #Start node of rrt2
+    ax.plot3D(MARRT.RRT_list[1].end.x, MARRT.RRT_list[1].end.y, MARRT.RRT_list[1].end.z, "xg")      #End node of rrt3
+
+    ax.plot3D([x for [x, y, z, t] in MARRT.RRT_list[2].path], [y for [x, y, z, t] in MARRT.RRT_list[2].path], [z for [x, y, z, t] in MARRT.RRT_list[2].path], 'r*') #TODO: change when z is added
+    ax.plot3D([x for [x, y, z, t] in MARRT.RRT_list[2].d_path], [y for [x, y, z, t] in MARRT.RRT_list[2].d_path], [z for [x, y, z, t] in MARRT.RRT_list[2].d_path], 'y')
+    ax.plot3D(MARRT.RRT_list[2].start.x, MARRT.RRT_list[2].start.y, MARRT.RRT_list[2].start.z, "xb")  #Start node of rrt2
+    ax.plot3D(MARRT.RRT_list[2].end.x, MARRT.RRT_list[2].end.y, MARRT.RRT_list[2].end.z, "xg")      #End node of rrt3
+    
+    plt.grid(True)
+    plt.show()
+
+
 
 if __name__ == '__main__':
     main()
