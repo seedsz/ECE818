@@ -216,9 +216,9 @@ class RRT:
             self.ax.plot3D(rnd.x, rnd.y, rnd.z, "^k")        #need z may need new plot method
             if self.robot_radius > 0.0:
                 self.plot_sphere(rnd.x, rnd.y, rnd.z, self.robot_radius, self.ax, '-r')     #need z circle may be wrong
-        for node in self.node_list:
-            if node.parent:
-                self.ax.plot3D(node.path_x, node.path_y, node.path_z, "-g")         #TODO This for loop makes the green nodes that we dont want in the test cases
+        #for node in self.node_list:
+            #if node.parent:
+                #self.ax.plot3D(node.path_x, node.path_y, node.path_z, "-g")         #TODO This for loop makes the green nodes that we dont want in the test cases
 
         for (ox, oy, oz, size) in self.obstacle_list:
             self.plot_sphere(ox, oy, oz, size, self.ax)          #need z     Will need to double check this

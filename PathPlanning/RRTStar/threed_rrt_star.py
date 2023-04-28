@@ -465,13 +465,6 @@ def main():
     print("Start " + __file__)
     print()
 
-    #fig = plt.figure()
-    #ax = fig.add_subplot(projection='3d')
-    #ax.set_aspect('equal')  
-    #ax.set_xlim3d(-2, 15)
-    #ax.set_ylim3d(-2, 15) 
-    #ax.set_zlim3d(-2, 15)
-    #ax.grid(True)
     
     # ====Search Path with RRT*====
     ''' obstacle_list = [
@@ -529,18 +522,21 @@ def main():
         res_attempts = res_attempts+1
         
     ax = rrt_star1.draw_graph()
-    ax.set_title('3D RRT Star Without Collision Correction')
-    ax.plot3D([x for (x, y, z, t) in rrt_star1.path], [y for (x, y, z, t) in rrt_star1.path], [z for (x, y, z, t) in rrt_star1.path], '-r')  #This is the old path
+    ax.set_title('Single Robot 3D RRT Star With Nodes')
+    ax.plot3D([x for (x, y, z, t) in rrt_star1.path[1:-1]], [y for (x, y, z, t) in rrt_star1.path[1:-1]], [z for (x, y, z, t) in rrt_star1.path[1:-1]], 'r*')  #This is the old path
+    ax.plot3D([x for (x, y, z, t) in rrt_star1.d_path], [y for (x, y, z, t) in rrt_star1.d_path], [z for (x, y, z, t) in rrt_star1.d_path], '-r', label='Robot 0')
 
-
-    ax.plot3D([x for (x, y, z, t) in rrt_star2.path], [y for (x, y, z, t) in rrt_star2.path], [z for (x, y, z, t) in rrt_star2.path], '-b')  #need z I think this worked with out the 3D on plot
+    ax.plot3D([x for (x, y, z, t) in rrt_star2.path[1:-1]], [y for (x, y, z, t) in rrt_star2.path[1:-1]], [z for (x, y, z, t) in rrt_star2.path[1:-1]], 'r*')  #need z I think this worked with out the 3D on plot
+    ax.plot3D([x for (x, y, z, t) in rrt_star2.d_path], [y for (x, y, z, t) in rrt_star2.d_path], [z for (x, y, z, t) in rrt_star2.d_path], '-b', label='Robot 1')
     ax.plot3D(rrt_star2.start.x, rrt_star2.start.y, rrt_star2.start.z, "xb")  #Start node of rrt2
     ax.plot3D(rrt_star2.end.x, rrt_star2.end.y, rrt_star2.end.z, "xg")      #End node of rrt3
 
-    ax.plot3D([x for (x, y, z, t) in rrt_star3.path], [y for (x, y, z, t) in rrt_star3.path], [z for (x, y, z, t) in rrt_star3.path], '-y')  #need z I think this worked with out the 3D on plot'''
+    ax.plot3D([x for (x, y, z, t) in rrt_star3.path[1:-1]], [y for (x, y, z, t) in rrt_star3.path[1:-1]], [z for (x, y, z, t) in rrt_star3.path[1:-1]], 'r*')  #need z I think this worked with out the 3D on plot
+    ax.plot3D([x for (x, y, z, t) in rrt_star3.d_path], [y for (x, y, z, t) in rrt_star3.d_path], [z for (x, y, z, t) in rrt_star3.d_path], '-y', label='Robot 2')
     ax.plot3D(rrt_star3.start.x, rrt_star3.start.y, rrt_star3.start.z, "xb")  #Start node of rrt2
     ax.plot3D(rrt_star3.end.x, rrt_star3.end.y, rrt_star3.end.z, "xg")      #End node of rrt3
     
+    plt.legend(loc='upper right')
     plt.pause(0.01)  # Need for Mac
     plt.show()
     
@@ -548,22 +544,23 @@ def main():
     ax.set_title('3D RRT Star With Collision Correction')
 
 
-    ax.plot3D([x for [x, y, z, t] in MARRT.RRT_list[0].path], [y for [x, y, z, t] in MARRT.RRT_list[0].path], [z for [x, y, z, t] in MARRT.RRT_list[0].path],'r*') #TODO: change when z is added
-    ax.plot3D([x for [x, y, z, t] in MARRT.RRT_list[0].d_path], [y for [x, y, z, t] in MARRT.RRT_list[0].d_path], [z for [x, y, z, t] in MARRT.RRT_list[0].d_path], 'r')
+    ax.plot3D([x for [x, y, z, t] in MARRT.RRT_list[0].path[1:-1]], [y for [x, y, z, t] in MARRT.RRT_list[0].path[1:-1]], [z for [x, y, z, t] in MARRT.RRT_list[0].path[1:-1]],'r*' ) #TODO: change when z is added
+    ax.plot3D([x for [x, y, z, t] in MARRT.RRT_list[0].d_path], [y for [x, y, z, t] in MARRT.RRT_list[0].d_path], [z for [x, y, z, t] in MARRT.RRT_list[0].d_path], 'r', label='Robot 0')
     ax.plot3D(MARRT.RRT_list[0].start.x, MARRT.RRT_list[0].start.y, MARRT.RRT_list[0].start.z, "xb")  #Start node of rrt2
     ax.plot3D(MARRT.RRT_list[0].end.x, MARRT.RRT_list[0].end.y, MARRT.RRT_list[0].end.z, "xg")      #End node of rrt3
 
 
-    ax.plot3D([x for [x, y, z, t] in MARRT.RRT_list[1].path], [y for [x, y, z, t] in MARRT.RRT_list[1].path], [z for [x, y, z, t] in MARRT.RRT_list[1].path], 'r*') #TODO: change when z is added
-    ax.plot3D([x for [x, y, z, t] in MARRT.RRT_list[1].d_path], [y for [x, y, z, t] in MARRT.RRT_list[1].d_path], [z for [x, y, z, t] in MARRT.RRT_list[1].d_path], 'b')
+    ax.plot3D([x for [x, y, z, t] in MARRT.RRT_list[1].path[1:-1]], [y for [x, y, z, t] in MARRT.RRT_list[1].path[1:-1]], [z for [x, y, z, t] in MARRT.RRT_list[1].path[1:-1]], 'r*') #TODO: change when z is added
+    ax.plot3D([x for [x, y, z, t] in MARRT.RRT_list[1].d_path], [y for [x, y, z, t] in MARRT.RRT_list[1].d_path], [z for [x, y, z, t] in MARRT.RRT_list[1].d_path], 'b', label='Robot 1')
     ax.plot3D(MARRT.RRT_list[1].start.x, MARRT.RRT_list[1].start.y, MARRT.RRT_list[1].start.z, "xb")  #Start node of rrt2
     ax.plot3D(MARRT.RRT_list[1].end.x, MARRT.RRT_list[1].end.y, MARRT.RRT_list[1].end.z, "xg")      #End node of rrt3
 
-    ax.plot3D([x for [x, y, z, t] in MARRT.RRT_list[2].path], [y for [x, y, z, t] in MARRT.RRT_list[2].path], [z for [x, y, z, t] in MARRT.RRT_list[2].path], 'r*') #TODO: change when z is added
-    ax.plot3D([x for [x, y, z, t] in MARRT.RRT_list[2].d_path], [y for [x, y, z, t] in MARRT.RRT_list[2].d_path], [z for [x, y, z, t] in MARRT.RRT_list[2].d_path], 'y')
+    ax.plot3D([x for [x, y, z, t] in MARRT.RRT_list[2].path[1:-1]], [y for [x, y, z, t] in MARRT.RRT_list[2].path[1:-1]], [z for [x, y, z, t] in MARRT.RRT_list[2].path[1:-1]], 'r*') #TODO: change when z is added
+    ax.plot3D([x for [x, y, z, t] in MARRT.RRT_list[2].d_path], [y for [x, y, z, t] in MARRT.RRT_list[2].d_path], [z for [x, y, z, t] in MARRT.RRT_list[2].d_path], 'y', label='Robot 2')
     ax.plot3D(MARRT.RRT_list[2].start.x, MARRT.RRT_list[2].start.y, MARRT.RRT_list[2].start.z, "xb")  #Start node of rrt2
     ax.plot3D(MARRT.RRT_list[2].end.x, MARRT.RRT_list[2].end.y, MARRT.RRT_list[2].end.z, "xg")      #End node of rrt3
     
+    plt.legend(loc='upper right')
     plt.grid(True)
     plt.show()
 
